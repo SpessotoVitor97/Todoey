@@ -14,7 +14,7 @@ class CategoryTableViewController: UITableViewController {
     //*************************************************
     // MARK: - Public properties
     //*************************************************
-    var categoriesArray: [Category] = []
+    var categoriesArray: Results<Category>?
     
     //*************************************************
     // MARK: - Private properties
@@ -23,10 +23,10 @@ class CategoryTableViewController: UITableViewController {
     private let addCategory = "Add category"
     private let createNewCategory = "Create new category"
     private let categoryCell = "CategoryCell"
-    private let emptyMessage = ""
     private let goToItems = "goToItems"
+    private let noCategoriesAddedYet = "No Categories added yet!"
+    private let emptyMessage = String()
     
-    private let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     private let realm = try! Realm()
     
     //*************************************************
@@ -34,7 +34,7 @@ class CategoryTableViewController: UITableViewController {
     //*************************************************
     override func viewDidLoad() {
         super.viewDidLoad()
-//        loadCategories()
+        loadCategories()
     }
     
     //*************************************************
@@ -50,7 +50,6 @@ class CategoryTableViewController: UITableViewController {
             let category = Category()
             category.name = newCategory
             
-            self.categoriesArray.append(category)
             self.save(category: category)
         }
         
@@ -67,14 +66,14 @@ class CategoryTableViewController: UITableViewController {
     // MARK: - TableView DataSource methods
     //*************************************************
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categoriesArray.count
+        return categoriesArray?.count ?? 1
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: categoryCell, for: indexPath)
-        let category = categoriesArray[indexPath.row]
+        let category = categoriesArray?[indexPath.row]
         
-        cell.textLabel?.text = category.name
+        cell.textLabel?.text = category?.name ?? noCategoriesAddedYet
         return cell
     }
     
@@ -89,7 +88,7 @@ class CategoryTableViewController: UITableViewController {
         let destinationVC = segue.destination as! TodoListViewController
         
         if let indexPath = tableView.indexPathForSelectedRow {
-            destinationVC.selectedCategory = categoriesArray[indexPath.row]
+            destinationVC.selectedCategory = categoriesArray?[indexPath.row]
         }
     }
     
@@ -102,17 +101,13 @@ class CategoryTableViewController: UITableViewController {
                 realm.add(category)
             }
         } catch {
-            print("Something went wrong while saving the context! --> \(error)")
+            print("Something went wrong while saving the category! --> \(error)")
         }
         self.tableView.reloadData()
     }
     
-//    func loadCategories(with request: NSFetchRequest<Category> = Category.fetchRequest()) {
-//        do {
-//            categoriesArray = try context.fetch(request)
-//        } catch {
-//            print("Something went wrong while fetching the categories! --> \(error)")
-//        }
-//        tableView.reloadData()
-//   }
+    func loadCategories() {
+        categoriesArray = realm.objects(Category.self)
+        tableView.reloadData()
+   }
 }
